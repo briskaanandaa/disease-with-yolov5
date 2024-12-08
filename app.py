@@ -6,7 +6,9 @@ from datetime import datetime
 from PIL import Image
 
 # Inisialisasi YOLOv5 model
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='runs/train/exp4/weights/best.pt')
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='runs/train/exp4/weights/best.pt', device=device)
+
 
 # Direktori untuk menyimpan gambar
 save_folder = 'static/detect'
