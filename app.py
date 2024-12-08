@@ -1,16 +1,14 @@
-from flask import Flask, render_template, Response, redirect, url_for, flash
+import streamlit as st
 import cv2
 import torch
 import os
 from datetime import datetime
+from PIL import Image
 
-app = Flask(__name__)
-app.secret_key = 'secret_key'  # Untuk flash messages
-
-# Load YOLOv5 model
+# Inisialisasi YOLOv5 model
 model = torch.hub.load('ultralytics/yolov5', 'custom', path='C:/Users/Asus/Downloads/file-yolo-test/yolov5/runs/train/exp4/weights/best.pt')
 
-# Folder untuk menyimpan gambar
+# Direktori untuk menyimpan gambar
 save_folder = 'static/detect'
 if not os.path.exists(save_folder):
     os.makedirs(save_folder)
@@ -22,91 +20,82 @@ disease_solutions = {
     2: {"name": "Sehat", "solution": "Daun selada yang sehat menunjukkan bahwa kondisi pH dan ketersediaan nutrisi berada dalam keseimbangan yang optimal. ..."}
 }
 
-# Variable global untuk menyimpan path gambar terakhir dan hasil deteksi
-last_image_path = None
-last_detections = []
+# Fungsi untuk mendeteksi gambar menggunakan YOLOv5
+def detect_image(image):
+    results = model(image)
+    detections = results.xyxy[0]  # Ambil bounding box dan label kelas
+    annotated_image = results.render()[0]  # Gambar dengan bounding box
+    return annotated_image, detections
 
+# Sidebar Streamlit
+st.sidebar.title("YOLOv5 Lettuce Detection")
+st.sidebar.markdown("Pilih sumber kamera dan mode operasi.")
 
-def gen_stream_frames(source):
-    try:
-        camera = cv2.VideoCapture(source)
-        while True:
-            success, frame = camera.read()
-            if not success:
-                break
-            
-            # YOLOv5 detection
-            results = model(frame)
-            frame = results.render()[0]  # Render frame dengan deteksi
-            
-            # Encode frame
-            _, buffer = cv2.imencode('.jpg', frame)
-            frame = buffer.tobytes()
-            
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-    except Exception as e:
-        print(f"Error streaming: {e}")
+# Pilihan kamera
+camera_source = st.sidebar.radio(
+    "Pilih Kamera:",
+    options=["Webcam", "ESP CAM"],
+    index=0
+)
 
+# URL ESP CAM
+esp_cam_url = "http://192.168.18.223:81/stream"
 
-@app.route('/')
-def index():
-    global last_image_path, last_detections, disease_solutions
-    return render_template(
-        'index.html',
-        image_path=last_image_path,
-        detections=last_detections,
-        disease_solutions=disease_solutions,
-        esp_cam_url="http://192.168.18.223:81/stream"
-    )
+# Tampilan halaman utama
+st.title("YOLOv5 Lettuce Detection")
+st.write("Aplikasi ini mendeteksi kondisi daun selada menggunakan model YOLOv5.")
 
+# Pilihan untuk streaming kamera
+if camera_source == "Webcam":
+    cap = cv2.VideoCapture(0)
+elif camera_source == "ESP CAM":
+    cap = cv2.VideoCapture(esp_cam_url)
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(gen_stream_frames(0), mimetype='multipart/x-mixed-replace; boundary=frame')
+# Streaming kamera
+frame_placeholder = st.empty()
+capture_button = st.sidebar.button("Ambil Gambar")
+detections_placeholder = st.empty()
 
+if cap.isOpened():
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            st.warning("Gagal membuka kamera.")
+            break
 
-@app.route('/esp_cam_feed')
-def esp_cam_feed():
-    return Response(gen_stream_frames("http://192.168.18.223:81/stream"), mimetype='multipart/x-mixed-replace; boundary=frame')
+        # Tampilkan frame kamera secara live
+        frame_placeholder.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), channels="RGB")
 
+        # Tindakan setelah tombol "Ambil Gambar" ditekan
+        if capture_button:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            save_path = os.path.join(save_folder, f"capture_{timestamp}.jpg")
 
-@app.route('/capture/<device>')
-def capture(device):
-    global last_image_path, last_detections
-    # Tentukan sumber video (webcam atau ESP CAM)
-    source = 0 if device == 'webcam' else "http://192.168.18.223:81/stream"
-    camera = cv2.VideoCapture(source)
-    success, frame = camera.read()
-    
-    if success:
-        # YOLOv5 detection
-        results = model(frame)
-        frame = results.render()[0]
-        
-        # Simpan gambar dengan timestamp
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        image_path = os.path.join(save_folder, f"capture_{timestamp}.jpg")
-        cv2.imwrite(image_path, frame)
-        last_image_path = image_path  # Simpan path gambar terakhir
+            # Deteksi YOLOv5
+            annotated_image, detections = detect_image(frame)
 
-        # Analisis hasil deteksi
-        detected_classes = results.xyxy[0][:, -1].tolist()  # Daftar label kelas
-        last_detections = []
-        for cls in detected_classes:
-            cls_id = int(cls)
-            if cls_id in disease_solutions:
-                last_detections.append(disease_solutions[cls_id])
-        
-        if last_detections:
-            flash("Deteksi selesai. Lihat hasil di bawah.", "success")
-        else:
-            flash("Tidak ada penyakit yang terdeteksi pada gambar.", "info")
-    else:
-        flash("Gagal mengambil gambar. Pastikan kamera tersedia.", "error")
-    
-    return redirect(url_for('index'))
+            # Simpan gambar dengan bounding box
+            cv2.imwrite(save_path, annotated_image)
 
+            # Konversi ke RGB untuk ditampilkan di Streamlit
+            annotated_image_rgb = cv2.cvtColor(annotated_image, cv2.COLOR_BGR2RGB)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+            # Tampilkan hasil gambar dan bounding box
+            st.image(annotated_image_rgb, caption="Hasil Deteksi dengan Bounding Box", use_column_width=True)
+
+            # Analisis hasil deteksi
+            st.subheader("Deteksi Penyakit:")
+            if len(detections) > 0:
+                for *xyxy, conf, cls in detections.tolist():
+                    cls_id = int(cls)
+                    if cls_id in disease_solutions:
+                        solution = disease_solutions[cls_id]
+                        st.success(f"Penyakit: {solution['name']}")
+                        st.write(f"Solusi: {solution['solution']}")
+            else:
+                st.info("Tidak ada penyakit terdeteksi.")
+            break
+
+    cap.release()
+else:
+    st.error("Kamera tidak dapat diakses.")
