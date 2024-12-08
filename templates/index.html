@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live YOLOv5 Detection</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: "Poppins", sans-serif;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100">
+    <div
+      class="flex flex-col lg:flex-row h-screen items-center justify-center justify-evenly"
+    >
+      <!-- Webcam Stream -->
+      <div
+        class="flex flex-col items-center p-5 bg-white rounded-lg shadow-lg w-[400px]"
+      >
+        <h1 class="font-bold text-2xl text-emerald-600 mb-4">
+          Webcam YOLOv5 Detection
+        </h1>
+        <img
+          src="{{ url_for('video_feed') }}"
+          class="h-60 rounded-lg shadow-md mb-4"
+        />
+      </div>
+
+      <!-- ESP CAM Stream -->
+      <div
+        class="flex flex-col items-center p-5 bg-white rounded-lg shadow-lg w-[400px]"
+      >
+        <h1 class="font-bold text-2xl text-emerald-600 mb-4">ESP CAM Stream</h1>
+        <img src="{{ esp_cam_url }}" class="h-60 rounded-lg shadow-md mb-4" />
+      </div>
+
+      <!-- Capture and Process Image -->
+      <div
+        class="flex flex-col items-center w-[400px] p-5 bg-white rounded-lg shadow-lg"
+      >
+        {% if image_path %}
+        <h2 class="font-bold text-2xl text-emerald-600 mb-4">Hasil Gambar:</h2>
+        <img src="{{ image_path }}" class="h-60 rounded-lg shadow-md mb-4" />
+
+        <div class="mt-4">
+          <button
+            id="processButton"
+            class="px-4 py-2 bg-emerald-600 rounded-lg text-white font-semibold hover:bg-emerald-500 transition duration-300"
+          >
+            Proses Gambar
+          </button>
+        </div>
+        {% endif %}
+        <div class="mt-10">
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %}
+          <ul class="w-full space-y-2">
+            {% for category, message in messages %}
+            <li
+              class="text-emerald-600 bg-emerald-100 p-3 rounded-lg shadow-md"
+            >
+              {{ message }}
+            </li>
+            {% endfor %}
+          </ul>
+          {% endif %} {% endwith %}
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

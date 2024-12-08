@@ -1,0 +1,16 @@
+path: ../yolov5/selada
+train: train/images
+val: valid/images
+test: test/images
+
+names:
+  0: daun bercak
+  1: daun busuk
+  2: sehat
+
+roboflow:
+  workspace: selada
+  project: selada-wfdno
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/selada/selada-wfdno/dataset/1

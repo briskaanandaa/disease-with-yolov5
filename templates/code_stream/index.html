@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deteksi Penyakit Daun Selada</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        width: 90%;
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        text-align: center;
+        color: #333;
+      }
+      .box {
+        margin-top: 20px;
+      }
+      .box h3 {
+        margin-bottom: 10px;
+        color: #555;
+      }
+      .box input,
+      .box button {
+        margin-bottom: 10px;
+        padding: 10px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .box button {
+        background-color: #28a745;
+        color: white;
+        cursor: pointer;
+      }
+      .box button:hover {
+        background-color: #218838;
+      }
+      img {
+        max-width: 100%;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-top: 10px;
+      }
+      .detection-result {
+        margin-top: 20px;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+      }
+      .detection-result p {
+        margin: 0;
+        padding: 5px 0;
+      }
+      .error {
+        color: red;
+      }
+      #esp-stream {
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Deteksi Penyakit Daun Selada</h1>
+
+      <!-- Form untuk unggah gambar -->
+      <div class="box">
+        <h3>Unggah Gambar untuk Deteksi</h3>
+        <form id="upload-form">
+          <input
+            type="file"
+            id="image"
+            name="image"
+            accept="image/*"
+            required
+          />
+          <br />
+          <label for="ph">pH Tanaman:</label>
+          <input
+            type="number"
+            step="0.1"
+            id="ph"
+            name="ph"
+            placeholder="Masukkan nilai pH"
+            required
+          />
+          <br />
+          <label for="nutrient">Nutrisi (TDS):</label>
+          <input
+            type="number"
+            id="nutrient"
+            name="nutrient"
+            placeholder="Masukkan nilai nutrisi"
+            required
+          />
+          <br />
+          <button type="submit">Unggah dan Deteksi</button>
+        </form>
+        <img id="uploaded-image" alt="Hasil deteksi akan muncul di sini" />
+        <div id="upload-result" class="detection-result"></div>
+      </div>
+
+      <!-- Pendeteksi langsung dari ESP CAM -->
+      <div class="box">
+        <h3>Deteksi Langsung dari Kamera ESP</h3>
+        <!-- Streaming video dari ESP CAM -->
+        <img
+          id="esp-stream"
+          src="http://192.168.18.223:81/stream"
+          alt="Live Streaming ESP CAM"
+        />
+        <br />
+        <button id="capture-btn">Ambil Gambar dari Kamera ESP</button>
+        <img id="captured-image" alt="Gambar yang diambil dari ESP CAM" />
+        <div id="esp-cam-result" class="detection-result"></div>
+      </div>
+    </div>
+
+    <script>
+      // Fungsi untuk unggah gambar dan analisis
+      const uploadForm = document.getElementById("upload-form");
+      const uploadedImage = document.getElementById("uploaded-image");
+      const uploadResultDiv = document.getElementById("upload-result");
+
+      uploadForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(uploadForm);
+        fetch("/predict", {
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.image) {
+              uploadedImage.src = "data:image/jpeg;base64," + data.image;
+              uploadResultDiv.innerHTML = data.detections
+                .map(
+                  (det) =>
+                    `<p><strong>${det.name}</strong>: ${det.solution}</p>`
+                )
+                .join("");
+            } else if (data.error) {
+              uploadResultDiv.innerHTML = `<p class="error">${data.error}</p>`;
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            uploadResultDiv.innerHTML =
+              '<p class="error">Terjadi kesalahan. Silakan coba lagi.</p>';
+          });
+      });
+
+      // Fungsi untuk deteksi langsung dari ESP CAM
+      const captureBtn = document.getElementById("capture-btn");
+      const capturedImage = document.getElementById("captured-image");
+      const espCamResultDiv = document.getElementById("esp-cam-result");
+
+      captureBtn.addEventListener("click", () => {
+        fetch("/capture")
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.image) {
+              capturedImage.src = "data:image/jpeg;base64," + data.image;
+              espCamResultDiv.innerHTML = data.detections
+                .map(
+                  (det) =>
+                    `<p><strong>${det.name}</strong>: ${det.solution}</p>`
+                )
+                .join("");
+            } else {
+              espCamResultDiv.innerHTML =
+                '<p class="error">Gagal mengambil data dari ESP CAM.</p>';
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            espCamResultDiv.innerHTML =
+              '<p class="error">Terjadi kesalahan. Silakan coba lagi.</p>';
+          });
+      });
+    </script>
+  </body>
+</html>
