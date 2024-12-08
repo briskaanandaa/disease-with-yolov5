@@ -1,28 +1,7 @@
-# Ultralytics YOLOv5 🚀, AGPL-3.0 license
-
-# Overview:
-# This pyproject.toml file manages the build, packaging, and distribution of the Ultralytics library.
-# It defines essential project metadata, dependencies, and settings used to develop and deploy the library.
-
-# Key Sections:
-# - [build-system]: Specifies the build requirements and backend (e.g., setuptools, wheel).
-# - [project]: Includes details like name, version, description, authors, dependencies and more.
-# - [project.optional-dependencies]: Provides additional, optional packages for extended features.
-# - [tool.*]: Configures settings for various tools (pytest, yapf, etc.) used in the project.
-
-# Installation:
-# The Ultralytics library can be installed using the command: 'pip install ultralytics'
-# For development purposes, you can install the package in editable mode with: 'pip install -e .'
-# This approach allows for real-time code modifications without the need for re-installation.
-
-# Documentation:
-# For comprehensive documentation and usage instructions, visit: https://docs.ultralytics.com
-
 [build-system]
 requires = ["setuptools>=43.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-# Project settings -----------------------------------------------------------------------------------------------------
 [project]
 version = "7.0.0"
 name = "YOLOv5"
@@ -61,7 +40,6 @@ classifiers = [
     "Operating System :: Microsoft :: Windows",
 ]
 
-# Required dependencies ------------------------------------------------------------------------------------------------
 dependencies = [
     "matplotlib>=3.3.0",
     "numpy>=1.22.2",
@@ -72,16 +50,15 @@ dependencies = [
     "scipy>=1.4.1",
     "torch>=1.8.0",
     "torchvision>=0.9.0",
-    "tqdm>=4.64.0", # progress bars
-    "psutil", # system utilization
-    "py-cpuinfo", # display CPU info
-    "thop>=0.1.1", # FLOPs computation
+    "tqdm>=4.64.0", 
+    "psutil", 
+    "py-cpuinfo", 
+    "thop>=0.1.1", 
     "pandas>=1.1.4",
-    "seaborn>=0.11.0", # plotting
-    "ultralytics>=8.1.47"
+    "seaborn>=0.11.0", 
+    "ultralytics==8.3.47"
 ]
 
-# Optional dependencies ------------------------------------------------------------------------------------------------
 [project.optional-dependencies]
 dev = [
     "ipython",
@@ -92,30 +69,25 @@ dev = [
     "coverage[toml]",
     "mkdocs-material",
     "mkdocstrings[python]",
-    "mkdocs-redirects", # for 301 redirects
-    "mkdocs-ultralytics-plugin>=0.0.34", # for meta descriptions and images, dates and authors
+    "mkdocs-redirects", 
+    "mkdocs-ultralytics-plugin>=0.0.34", 
 ]
 export = [
-    "onnx>=1.12.0", # ONNX export
-    "coremltools>=7.0; platform_system != 'Windows'", # CoreML only supported on macOS and Linux
-    "openvino-dev>=2023.0", # OpenVINO export
-    "tensorflow>=2.0.0", # TF bug https://github.com/ultralytics/ultralytics/issues/5161
-    "tensorflowjs>=3.9.0", # TF.js export, automatically installs tensorflow
+    "onnx>=1.12.0", 
+    "coremltools>=7.0; platform_system != 'Windows'", 
+    "openvino-dev>=2023.0", 
+    "tensorflow>=2.0.0", 
+    "tensorflowjs>=3.9.0", 
 ]
-# tensorflow>=2.4.1,<=2.13.1  # TF exports (-cpu, -aarch64, -macos)
-# tflite-support  # for TFLite model metadata
-# scikit-learn==0.19.2  # CoreML quantization
-# nvidia-pyindex  # TensorRT export
-# nvidia-tensorrt  # TensorRT export
 logging = [
-    "comet", # https://docs.ultralytics.com/integrations/comet/
+    "comet", 
     "tensorboard>=2.13.0",
     "dvclive>=2.12.0",
 ]
 extra = [
-    "ipython", # interactive notebook
-    "albumentations>=1.0.3", # training augmentations
-    "pycocotools>=2.0.6", # COCO mAP
+    "ipython", 
+    "albumentations>=1.0.3", 
+    "pycocotools>=2.0.6", 
 ]
 
 [project.urls]
@@ -123,7 +95,6 @@ extra = [
 "Funding" = "https://ultralytics.com"
 "Source" = "https://github.com/ultralytics/yolov5/"
 
-# Tools settings -------------------------------------------------------------------------------------------------------
 [tool.pytest]
 norecursedirs = [".git", "dist", "build"]
 addopts = "--doctest-modules --durations=30 --color=yes"
